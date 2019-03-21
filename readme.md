@@ -4,6 +4,8 @@ To provide an easy-to-use, object-oriented instrument interface for the [DATAQ D
 
 The intent of this project is not to provide an API that will be useful in 100% of use cases, but will target the 90%.  In my experience, most of us need pretty basic functionality and have only modest timing requirements when working with such instrumentation.  As a result of this, the API will attempt to abstract away the lowest-level functionality which may result in a hiding or loss of feature implementation available in the hardware.  If this happens to you, feel free to use the nuts and bolts exposed herein to inform your own development or, better yet, send us a pull request!
 
+More complete documentation may be found at [readthedocs](https://di2008.readthedocs.io/en/latest/index.html).
+
 # Installation
 
 The hardware drivers must be installed before this package may be utilized.  Hardware drivers may be downloaded from the [manufacturer's product page](https://www.dataq.com/products/di-2008/).
