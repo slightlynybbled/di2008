@@ -5,6 +5,7 @@ Implements some of the functionality of the DATAQ DI-2008 data acquisition modul
 import logging
 import threading
 from time import sleep
+from typing import List
 
 from serial import Serial
 from serial.tools import list_ports
@@ -30,18 +31,19 @@ class Port:
 
 
 class AnalogPort(Port):
+    """
+    Analog input port which may be configured as a strict voltage monitor or as a thermocouple input.
+
+    :param channel: integer, the channel number
+    :param analog_range: float, the expected range when configurated as an analog input; valid values are in [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 25.0, 50.0] while invalid values will raise a ``ValueError``
+    :param thermocouple_type: string, a single letter denoting the thermocouple type; valid values are in ['b', 'e', 'j', 'k', 'n', 'r', 's', 't'] and invalid values will raise a ``ValueError``
+    :param filter: string, a string containing 'last point', 'average', 'maximum' or 'minimum' as defined in the device datasheet
+    :param filter_decimation: int, an integer containing the number of samples over which to filter as defined in the device datasheet
+    :param loglevel: the logging level, i.e. ``logging.INFO``
+    """
     def __init__(self, channel: int, analog_range: float=None, thermocouple_type: str=None,
                  filter: str='last point', filter_decimation: int=10, loglevel=logging.INFO):
-        """
-        Analog input
 
-        :param channel: integer, the channel number
-        :param analog_range: float, the expected range when configurated as an analog input
-        :param thermocouple_type: string, a single letter denoting the thermocouple type
-        :param filter: string, a string containing 'last point', 'average', 'maximum' or 'minimum'
-        :param filter_decimation: int, an integer containing the number of samples over which to filter
-        :param loglevel: the logging level
-        """
         super().__init__(loglevel=loglevel)
 
         if channel not in range(0, 8):
@@ -125,6 +127,12 @@ class AnalogPort(Port):
         return string
 
     def parse(self, input):
+        """
+        The ``parse`` method is intended to be called by the Di2008 class when it receives data associated with the ``AnalogPort``.
+
+        :param input: 16-bit integer input representing the 'raw' data stream
+        :return:
+        """
         if self._is_tc:
             if input == 32767:
                 self.value = None
@@ -179,6 +187,13 @@ class AnalogPort(Port):
 
 
 class RatePort(Port):
+    """
+    Digital input port which may be configured as a frequency monitor.
+
+    :param range_hz: the maximum range of the input, in Hz; valid values are in [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10] and invalid values will raise a ``ValueError``
+    :param filter_samples: filter samples as defined within the device datasheet
+    :param loglevel: the logging level, i.e. ``logging.INFO``
+    """
     def __init__(self, range_hz=50000, filter_samples: int=32, loglevel=logging.INFO):
         super().__init__(loglevel=loglevel)
 
@@ -210,6 +225,9 @@ class RatePort(Port):
 
 
 class CountPort(Port):
+    """
+    todo: Implement and document CountPort
+    """
     def __init__(self, loglevel=logging.DEBUG):
         super().__init__(loglevel=loglevel)
 
@@ -226,7 +244,15 @@ class DigitalPort(Port):
 
 
 class Di2008:
+    """
+    The device controller which implements its own ``threading.Thread`` class and processes incomming data based on its defined scan list.
+
+    :param port_name: the COM port (if not specified, the software will attempt to find the device)
+    :param timeout: the period of time over which input data is pulled from the serial port and processed
+    :param loglevel: the logging level, i.e. ``logging.INFO``
+    """
     def __init__(self, port_name=None, timeout=0.05, loglevel=logging.INFO):
+
         self._logger = logging.getLogger(self.__class__.__name__)
         self._logger.setLevel(loglevel)
 
@@ -257,6 +283,12 @@ class Di2008:
         return f'{self._manufacturer} DI-{self._pid}, serial number {self._esn}, firmware {self._firmware}'
 
     def change_led_color(self, color: 'str'):
+        """
+        Change the LED color.
+
+        :param color: the color as a string; valid values are in ['black', 'blue', 'green', 'cyan', 'red', 'magenta', 'yellow', 'white'] and invalid values will raise a ``ValueError``
+        :return: None
+        """
         colors_lookup = {
             'black': 0, 'blue': 1, 'green': 2, 'cyan': 3,
             'red': 4, 'magenta': 5, 'yellow': 6, 'white': 7
@@ -268,7 +300,13 @@ class Di2008:
 
         self._command_queue.append(f'led {colors_lookup[color.lower()]}')
 
-    def create_scan_list(self, scan_list: list):
+    def create_scan_list(self, scan_list: List[Port]):
+        """
+        Builds the scan list.  This must be done while the instrument is not currently scanning or results are unpredictable.
+
+        :param scan_list: a list of ``Port`` types.
+        :return: True if success, else False
+        """
         # create a scan list based on the provided list
         for port in scan_list:
             if not isinstance(port, Port):
@@ -308,12 +346,26 @@ class Di2008:
         return True
 
     def start(self):
+        """
+        Starts the device scanning.  The scan list must already be defined using ``create_scan_list`` method.
+
+        :return: None
+        """
         self._command_queue.append('start')
 
     def stop(self):
+        """
+        Stops the device scanning.
+        :return:
+        """
         self._command_queue.append('stop')
 
     def close(self):
+        """
+        Release the device and serial port.
+
+        :return: None
+        """
         self._logger.warning('closing port')
         if self._serial_port:
             self._serial_port.close()
