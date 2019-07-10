@@ -11,6 +11,13 @@ from serial import Serial
 from serial.tools import list_ports
 
 
+class AnalogPortError(Exception):
+    """
+    Raised when there is an analog-port related error on the DI-2008
+    """
+    pass
+
+
 class Port:
     _mode_bit = 12
     _range_bit = 11
@@ -46,11 +53,13 @@ class AnalogPort(Port):
 
         super().__init__(loglevel=loglevel)
 
-        if channel not in range(0, 8):
-            self._logger.warning(f'analog channel "{channel}" not valid')
-            return
+        if channel == 0:
+            raise AnalogPortError(f'channel 0 is invalid, note that the channel numbers line up with the hardware.')
 
-        configuration = channel
+        if channel not in range(1, 9):
+            raise AnalogPortError(f'channel "{channel}" is invalid, expected 1 to 8, inclusivie')
+
+        configuration = channel - 1
 
         if analog_range is not None and thermocouple_type is not None:
             raise ValueError(f'analog range and thermocouple type are both specified for analog channel {channel}')
@@ -99,7 +108,7 @@ class AnalogPort(Port):
         return (self.configuration & (1 << self._mode_bit)) > 0
 
     def __str__(self):
-        channel = self.configuration & 0xf
+        channel = self.configuration & 0xf + 1
 
         string = f'analog input, channel {channel} '
         if self._is_tc:
