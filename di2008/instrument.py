@@ -108,7 +108,7 @@ class AnalogPort(Port):
         return (self.configuration & (1 << self._mode_bit)) > 0
 
     def __str__(self):
-        channel = self.configuration & 0xf + 1
+        channel = (self.configuration & 0xf) + 1
 
         string = f'analog input, channel {channel} '
         if self._is_tc:
@@ -390,17 +390,21 @@ class Di2008:
         self.start()
 
     def _discover(self, port_name=None):
-        if not port_name:
+        if port_name is None:
+            self._logger.info('port name not supplied, '
+                              'attempting auto-discovery...')
             available_ports = list(list_ports.comports())
             for p in available_ports:
                 # Do we have a DATAQ Instruments device?
                 if "VID:PID=0683" in p.hwid:
                     # Yes!  Detect and assign the hooked com port
                     port_name = p.device
+                    self._logger.info(f'auto discovery found DI-2008 on port '
+                                      f'{port_name.upper()}')
                     break
 
         if port_name:
-            self._logger.info(f'Found a DATAQ Instruments device on {port_name}')
+            self._logger.info(f'device found on {port_name}')
             self._serial_port = Serial()
             self._serial_port.timeout = 0
             self._serial_port.port = port_name

@@ -61,9 +61,9 @@ Some sample code might be more illuminating.  A simple script to set up the scan
     from di2008 import AnalogPort, RatePort, Di2008
     
     # create each of the inputs that need to be sampled
-    an0 = AnalogPort(0, analog_range=10.0, filter='average')
-    an1 = AnalogPort(1, thermocouple_type='j')
-    an2 = AnalogPort(2, thermocouple_type='j')
+    an0 = AnalogPort(1, analog_range=10.0, filter='average')
+    an1 = AnalogPort(2, thermocouple_type='j')
+    an2 = AnalogPort(3, thermocouple_type='j')
     rate = RatePort(5000)
     
     daq = Di2008()
