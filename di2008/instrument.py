@@ -302,7 +302,8 @@ class Di2008:
 
     def create_scan_list(self, scan_list: List[Port]):
         """
-        Builds the scan list.  This must be done while the instrument is not currently scanning or results are unpredictable.
+        Builds the scan list.  This must be done while the instrument is not \
+        currently scanning or results are unpredictable.
 
         :param scan_list: a list of ``Port`` types.
         :return: True if success, else False
@@ -313,7 +314,8 @@ class Di2008:
                 raise ValueError(f'"{port}" is not an instance of Port class')
 
         if len(scan_list) > 11:
-            raise ValueError('scan list may only be a maximum of 11 elements long')
+            raise ValueError('scan list may only be a maximum '
+                             'of 11 elements long')
 
         # todo: check for duplicates and raise ValueError if duplicate detected
 
@@ -347,7 +349,8 @@ class Di2008:
 
     def start(self):
         """
-        Starts the device scanning.  The scan list must already be defined using ``create_scan_list`` method.
+        Starts the device scanning.  The scan list must already be defined \
+        using ``create_scan_list`` method.
 
         :return: None
         """
@@ -370,6 +373,12 @@ class Di2008:
         if self._serial_port:
             self._serial_port.close()
             self._serial_port = None
+
+    def _recover_buffer_overflow(self):
+        self._command_queue = []
+        self.stop()
+        self.create_scan_list(self._ports)
+        self.start()
 
     def _discover(self, port_name=None):
         if not port_name:
