@@ -2,6 +2,7 @@
 Implements some of the functionality of the DATAQ DI-2008 data acquisition module.
 """
 
+from datetime import datetime, timedelta
 import logging
 import threading
 from time import sleep
@@ -30,8 +31,20 @@ class Port:
         self._callback = callback
 
         self.value = None
+        self._last_received = None
         self.configuration = 0
         self.commands = []
+
+    @property
+    def is_active(self):
+        age = datetime.now() - self._last_received
+        max_age = timedelta(seconds=3)
+
+        if self._last_received is None or (age > max_age):
+            self._logger.info(f'{self} does not appear to be active')
+            return False
+
+        return True
 
     def parse(self, value):
         raise NotImplementedError
@@ -54,15 +67,18 @@ class AnalogPort(Port):
         super().__init__(loglevel=loglevel)
 
         if channel == 0:
-            raise AnalogPortError(f'channel 0 is invalid, note that the channel numbers line up with the hardware.')
+            raise AnalogPortError(f'channel 0 is invalid, note that the '
+                                  f'channel numbers line up with the hardware.')
 
         if channel not in range(1, 9):
-            raise AnalogPortError(f'channel "{channel}" is invalid, expected 1 to 8, inclusivie')
+            raise AnalogPortError(f'channel "{channel}" is invalid, '
+                                  f'expected 1 to 8, inclusivie')
 
         configuration = channel - 1
 
         if analog_range is not None and thermocouple_type is not None:
-            raise ValueError(f'analog range and thermocouple type are both specified for analog channel {channel}')
+            raise ValueError(f'analog range and thermocouple type are '
+                             f'both specified for analog channel {channel}')
 
         if analog_range is not None:
             valid_ranges = [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 25.0, 50.0]
@@ -71,7 +87,7 @@ class AnalogPort(Port):
 
             if analog_range >= 1.0:
                 configuration |= (1 << self._range_bit)  # set the range bit
-                analog_range /= 100         # change the range to make lookup easier
+                analog_range /= 100  # change the range to make lookup easier
 
             range_lookup = {
                 0.5: 0, 0.25: 1, 0.1: 2, 0.05: 3, 0.025: 4, 0.01: 5
@@ -137,20 +153,26 @@ class AnalogPort(Port):
 
     def parse(self, input):
         """
-        The ``parse`` method is intended to be called by the Di2008 class when it receives data associated with the ``AnalogPort``.
+        The ``parse`` method is intended to be called by the Di2008 \
+        class when it receives data associated with the ``AnalogPort``.
 
         :param input: 16-bit integer input representing the 'raw' data stream
         :return:
         """
+        self._last_received = datetime.now()
+
         if self._is_tc:
             if input == 32767:
                 self.value = None
-                self._logger.warning(f'!!! TC Error, cannot communicate with sensor or the reading '
-                                     f'is outside the sensor\'s measurement range on "{str(self)}"')
+                self._logger.warning('!!! thermocouple error, cannot '
+                                     'communicate with sensor or the reading '
+                                     'is outside the sensor\'s measurement '
+                                     f'range on "{str(self)}"')
                 return
             elif input == -32768:
                 self.value = None
-                self._logger.warning(f'!!! TC Error, thermocouple open or not connected on "{str(self)}"')
+                self._logger.warning(f'!!! thermocouple error, thermocouple '
+                                     f'open or not connected on "{str(self)}"')
                 return
 
             # from datasheet...
@@ -183,11 +205,13 @@ class AnalogPort(Port):
         range_bit = self.configuration & (1 << self._range_bit)
         if range_bit:
             ranges = [r * 100 for r in ranges]
-        scale_factor = (self.configuration & (0x7 << self._scale_bit)) >> self._scale_bit
+        scale_factor = (self.configuration & (0x7 << self._scale_bit)) \
+            >> self._scale_bit
         range_value = ranges[scale_factor]
 
         self.value = range_value * float(input) / 32768.0
-        self._logger.debug(f'input value "{input}" converted for "{str(self)}" is "{self.value:.4f}V"')
+        self._logger.debug(f'input value "{input}" converted for '
+                           f'"{str(self)}" is "{self.value:.4f}V"')
 
         if self._callback:
             self._callback(self.value)
@@ -199,22 +223,29 @@ class RatePort(Port):
     """
     Digital input port which may be configured as a frequency monitor.
 
-    :param range_hz: the maximum range of the input, in Hz; valid values are in [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10] and invalid values will raise a ``ValueError``
-    :param filter_samples: filter samples as defined within the device datasheet
+    :param range_hz: the maximum range of the input, in Hz; valid values are \
+    in [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10] and \
+    invalid values will raise a ``ValueError``
+    :param filter_samples: filter samples as defined within the device \
+    datasheet
     :param loglevel: the logging level, i.e. ``logging.INFO``
     """
-    def __init__(self, range_hz=50000, filter_samples: int=32, loglevel=logging.INFO):
+    def __init__(self, range_hz=50000, filter_samples: int = 32,
+                 loglevel=logging.INFO):
         super().__init__(loglevel=loglevel)
 
         rates_lookup = {
-            50000: 1, 20000: 2, 10000: 3, 5000: 4, 2000: 5, 1000: 6, 500: 7, 200: 8, 100: 9, 50: 10, 20: 11, 10: 12
+            50000: 1, 20000: 2, 10000: 3, 5000: 4, 2000: 5, 1000: 6, 500: 7,
+            200: 8, 100: 9, 50: 10, 20: 11, 10: 12
         }
         valid_rates = [r for r in rates_lookup.keys()]
         if range_hz not in valid_rates:
-            raise ValueError(f'rate not valid, please choose a valid rate from the following: {", ".join(valid_rates)}')
+            raise ValueError(f'rate not valid, please choose a valid rate '
+                             f'from the following: {", ".join(valid_rates)}')
 
         if not 1 <= filter_samples <= 64:
-            raise ValueError(f'filter_samples not valid, must be between 1 and 64, inclusive')
+            raise ValueError(f'filter_samples not valid, must be '
+                             f'between 1 and 64, inclusive')
 
         self.configuration = (rates_lookup[range_hz] << self._scale_bit) + 0x9
         self.commands += [f'ffl {filter_samples}']
@@ -224,8 +255,11 @@ class RatePort(Port):
         return f'rate input, {self._range}Hz'
 
     def parse(self, input):
+        self._last_received = datetime.now()
+
         self.value = self._range * (input + 32768) / 65536
-        self._logger.debug(f'input value "{input}" converted for "{str(self)}" is "{self.value:.4f}Hz"')
+        self._logger.debug(f'input value "{input}" converted for '
+                           f'"{str(self)}" is "{self.value:.4f}Hz"')
 
         if self._callback:
             self._callback(self.value)
@@ -295,7 +329,9 @@ class Di2008:
         """
         Change the LED color.
 
-        :param color: the color as a string; valid values are in ['black', 'blue', 'green', 'cyan', 'red', 'magenta', 'yellow', 'white'] and invalid values will raise a ``ValueError``
+        :param color: the color as a string; valid values are in \
+        ['black', 'blue', 'green', 'cyan', 'red', 'magenta', 'yellow', \
+        'white'] and invalid values will raise a ``ValueError``
         :return: None
         """
         colors_lookup = {
