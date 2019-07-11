@@ -19,6 +19,13 @@ class AnalogPortError(Exception):
     pass
 
 
+class DigitalPortError(Exception):
+    """
+    Raised when there is a digital port related error on the DI-2008
+    """
+    pass
+
+
 class Port:
     _mode_bit = 12
     _range_bit = 11
@@ -52,17 +59,27 @@ class Port:
 
 class AnalogPort(Port):
     """
-    Analog input port which may be configured as a strict voltage monitor or as a thermocouple input.
+    Analog input port which may be configured as a strict voltage monitor or \
+    as a thermocouple input.
 
     :param channel: integer, the channel number
-    :param analog_range: float, the expected range when configurated as an analog input; valid values are in [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 25.0, 50.0] while invalid values will raise a ``ValueError``
-    :param thermocouple_type: string, a single letter denoting the thermocouple type; valid values are in ['b', 'e', 'j', 'k', 'n', 'r', 's', 't'] and invalid values will raise a ``ValueError``
-    :param filter: string, a string containing 'last point', 'average', 'maximum' or 'minimum' as defined in the device datasheet
-    :param filter_decimation: int, an integer containing the number of samples over which to filter as defined in the device datasheet
+    :param analog_range: float, the expected range when configurated as an \
+    analog input; valid values are in [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, \
+    1.0, 2.5, 5.0, 10.0, 25.0, 50.0] while invalid values will raise a \
+    ``ValueError``
+    :param thermocouple_type: string, a single letter denoting the \
+    thermocouple type; valid values are in ['b', 'e', 'j', 'k', 'n', 'r', \
+    's', 't'] and invalid values will raise a ``ValueError``
+    :param filter: string, a string containing 'last point', 'average', \
+    'maximum' or 'minimum' as defined in the device datasheet
+    :param filter_decimation: int, an integer containing the number of \
+    samples over which to filter as defined in the device datasheet
     :param loglevel: the logging level, i.e. ``logging.INFO``
     """
-    def __init__(self, channel: int, analog_range: float=None, thermocouple_type: str=None,
-                 filter: str='last point', filter_decimation: int=10, loglevel=logging.INFO):
+    def __init__(self, channel: int,
+                 analog_range: float = None, thermocouple_type: str = None,
+                 filter: str = 'last point', filter_decimation: int = 10,
+                 loglevel=logging.INFO):
 
         super().__init__(loglevel=loglevel)
 
@@ -81,9 +98,11 @@ class AnalogPort(Port):
                              f'both specified for analog channel {channel}')
 
         if analog_range is not None:
-            valid_ranges = [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 25.0, 50.0]
+            valid_ranges = [0.01, 0.025, 0.05, 0.1, 0.25, 0.5,
+                            1.0, 2.5, 5.0, 10.0, 25.0, 50.0]
             if analog_range not in valid_ranges:
-                raise ValueError(f'valid values for analog range: {", ".join(valid_ranges)}')
+                raise ValueError('valid values for analog range: '
+                                 f'{", ".join(valid_ranges)}')
 
             if analog_range >= 1.0:
                 configuration |= (1 << self._range_bit)  # set the range bit
@@ -103,18 +122,22 @@ class AnalogPort(Port):
                 'b': 0, 'e': 1, 'j': 2, 'k': 3, 'n': 4, 'r': 5, 's': 6, 't': 7
             }
 
-            configuration |= (thermo_lookup[thermocouple_type.lower()] << self._scale_bit)
+            configuration |= (thermo_lookup[thermocouple_type.lower()]
+                              << self._scale_bit)
 
         filter_types = ['last point', 'average', 'maximum', 'minimum']
         if filter.lower() not in filter_types:
-            raise ValueError(f'the "filter" must be one of the following: {", ".join(filter_types)}')
+            raise ValueError(f'the "filter" must be one of the following: '
+                             f'{", ".join(filter_types)}')
         if filter_decimation < 1 or filter_decimation > 32767:
-            raise ValueError('the "filter_decimation" parameter must be between 1 and 32767, inclusive')
+            raise ValueError('the "filter_decimation" parameter must be '
+                             'between 1 and 32767, inclusive')
 
         filter_value = filter_types.index(filter.lower())
 
         self.configuration = configuration
-        self.commands += [f'filter {channel} {filter_value}', f'dec {filter_decimation}']
+        self.commands += [f'filter {channel} {filter_value}',
+                          f'dec {filter_decimation}']
 
     @property
     def _is_tc(self):
@@ -134,7 +157,8 @@ class AnalogPort(Port):
             tc_ranges = {
                 0: 'B', 1: 'E', 2: 'J', 3: 'K', 4: 'N', 5: 'R', 6: 'S', 7: 'T'
             }
-            tc_type = tc_ranges[(self.configuration & (0x7 << self._scale_bit)) >> self._scale_bit]
+            tc_type = tc_ranges[(self.configuration &
+                                 (0x7 << self._scale_bit)) >> self._scale_bit]
 
             string += f'type {tc_type}'
 
@@ -145,7 +169,8 @@ class AnalogPort(Port):
             range_bit = self.configuration & (1 << self._range_bit)
             if range_bit:
                 ranges = [r * 100 for r in ranges]
-            scale_factor = (self.configuration & (0x7 << self._scale_bit)) >> self._scale_bit
+            scale_factor = (self.configuration &
+                            (0x7 << self._scale_bit)) >> self._scale_bit
             range_value = ranges[scale_factor]
             string += f'+/-{range_value}V'
 
@@ -188,13 +213,15 @@ class AnalogPort(Port):
             tc_ranges = {
                 0: 'b', 1: 'e', 2: 'j', 3: 'k', 4: 'n', 5: 'r', 6: 's', 7: 't'
             }
-            tc_type = tc_ranges[(self.configuration & (0x7 << self._scale_bit)) >> self._scale_bit]
+            tc_type = tc_ranges[(self.configuration &
+                                 (0x7 << self._scale_bit)) >> self._scale_bit]
 
             m = m_lookup[tc_type]
             b = b_lookup[tc_type]
 
             self.value = input * m + b
-            self._logger.debug(f'input value "{input}" converted for "{str(self)}" is "{self.value:.2f}°C"')
+            self._logger.debug(f'input value "{input}" converted for '
+                               f'"{str(self)}" is "{self.value:.2f}°C"')
 
             if self._callback:
                 self._callback(self.value)
@@ -279,23 +306,34 @@ class CountPort(Port):
 
 
 class DigitalPort(Port):
-    def __init__(self, output: bool=True, loglevel=logging.DEBUG):
+    def __init__(self, channel: int, output: bool = False, loglevel=logging.INFO):
         super().__init__(loglevel=loglevel)
 
-        self.configuration = 0x8
-        raise NotImplementedError
+        if channel not in range(0, 7):
+            raise DigitalPortError(f'channel "{channel}" '
+                                   'is not a valid digital channel')
+
+        self.channel = channel
+        self.output = output
+        self.value = False
+
+    def __repr__(self):
+        return f'digital {"output" if self.output else "input"} ' \
+            f'{self.channel}'
 
 
 class Di2008:
     """
-    The device controller which implements its own ``threading.Thread`` class and processes incomming data based on its defined scan list.
+    The device controller which implements its own ``threading.Thread`` class \
+    and processes incomming data based on its defined scan list.
 
-    :param port_name: the COM port (if not specified, the software will attempt to find the device)
-    :param timeout: the period of time over which input data is pulled from the serial port and processed
+    :param port_name: the COM port (if not specified, the software will \
+    attempt to find the device)
+    :param timeout: the period of time over which input data is pulled from \
+    the serial port and processed
     :param loglevel: the logging level, i.e. ``logging.INFO``
     """
     def __init__(self, port_name=None, timeout=0.05, loglevel=logging.INFO):
-
         self._logger = logging.getLogger(self.__class__.__name__)
         self._logger.setLevel(loglevel)
 
@@ -304,6 +342,7 @@ class Di2008:
         self._scan_index = 0
         self._serial_port = None
         self._ports = []
+        self._dio = [DigitalPort(x) for x in range(0, 7)]
         self._raw = []
 
         self._manufacturer = None
@@ -323,7 +362,8 @@ class Di2008:
             self._thread.start()
 
     def __str__(self):
-        return f'{self._manufacturer} DI-{self._pid}, serial number {self._esn}, firmware {self._firmware}'
+        return f'{self._manufacturer} DI-{self._pid}, serial number ' \
+            f'{self._esn}, firmware {self._firmware}'
 
     def change_led_color(self, color: 'str'):
         """
@@ -341,9 +381,22 @@ class Di2008:
         valid_colors = [c for c in colors_lookup.keys()]
 
         if color.lower() not in valid_colors:
-            raise ValueError(f'color not valid, should be one of {", ".join(valid_colors)}')
+            raise ValueError(f'color not valid, should be one of '
+                             f'{", ".join(valid_colors)}')
 
         self._command_queue.append(f'led {colors_lookup[color.lower()]}')
+
+    def setup_digital(self, digital_port_list: List[DigitalPort]):
+        value = 0x00
+        for port in digital_port_list:
+            if port.output:
+                value |= 1 << port.channel
+
+            # replace any default references with the
+            # user's references to the same channel
+            self._dio[port.channel] = port
+
+        self._command_queue.append(f'endo {value}')
 
     def create_scan_list(self, scan_list: List[Port]):
         """
@@ -469,7 +522,8 @@ class Di2008:
                 self._scan_index %= len(self._ports)
 
         else:
-            # strip the '0x00' from the received data in non-scan mode - it only causes problems
+            # strip the '0x00' from the received data in non-scan
+            # mode - it only causes problems
             self._raw += [chr(b) for b in received if b != 0]
 
             messages = []
@@ -489,6 +543,10 @@ class Di2008:
             for message in messages:
                 if 'info' in message:
                     self._parse_info(message)
+
+                elif 'din' in message:
+                    self._parse_din(message)
+
                 else:
                     self._logger.info(f'message could not be parsed: "{message}"')
 
@@ -514,7 +572,18 @@ class Di2008:
             self._esn = message.split('info 6')[-1].strip()
 
         else:
-            self._logger.warning(f'message not understood: "{message}"')
+            self._logger.warning(f'info message not understood: "{message}"')
+
+    def _parse_din(self, message):
+        number = int(message.split(' ')[-1].strip())
+
+        for i, port in enumerate(self._dio):
+            if (number & (1 << i)) > 0:
+                port.value = True
+            else:
+                port.value = False
+
+            self._logger.debug(f'digital {port} is {port.value}')
 
     def _maintain_send_queue(self):
         if len(self._command_queue) > 0:
@@ -527,6 +596,10 @@ class Di2008:
                 self._scanning = False
 
             self._send_cmd(command)
+
+        else:
+            # when there is nothing else to do, simply poll the digital inputs
+            self._command_queue.append('din')
 
     def _run(self):
         while self._serial_port:
@@ -545,16 +618,21 @@ if __name__ == '__main__':
 
     daq = Di2008(loglevel=logging.DEBUG)
     sleep(0.5)
-
-    daq.create_scan_list(
+    daq.setup_digital(
         [
-            AnalogPort(0, analog_range=10.0, filter='average'),
-            AnalogPort(1, thermocouple_type='j'),
-            AnalogPort(2, thermocouple_type='j'),
-            RatePort(5000)
+            DigitalPort(0, output=False)
         ]
     )
-    daq.start()
+
+    # daq.create_scan_list(
+    #     [
+    #         AnalogPort(0, analog_range=10.0, filter='average'),
+    #         AnalogPort(1, thermocouple_type='j'),
+    #         AnalogPort(2, thermocouple_type='j'),
+    #         RatePort(5000)
+    #     ]
+    # )
+    #daq.start()
 
     sleep(2.5)
     daq.stop()
