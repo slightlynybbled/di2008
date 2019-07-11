@@ -17,12 +17,16 @@ subclasses of the ``Port`` class.
 
 .. autoclass:: di2008.AnalogPort
     :members:
+    :inherited-members:
 
 .. autoclass:: di2008.DigitalPort
     :members:
+    :inherited-members:
 
 .. autoclass:: di2008.RatePort
     :members:
+    :inherited-members:
 
 .. autoclass:: di2008.CountPort
     :members:
+    :inherited-members:
