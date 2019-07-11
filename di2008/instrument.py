@@ -321,6 +321,12 @@ class DigitalPort(Port):
         return f'digital {"output" if self.output else "input"} ' \
             f'{self.channel}'
 
+    def pull_down(self):
+        self.output = True
+
+    def release(self):
+        self.output = False
+
 
 class Di2008:
     """
@@ -387,6 +393,12 @@ class Di2008:
         self._command_queue.append(f'led {colors_lookup[color.lower()]}')
 
     def setup_digital(self, digital_port_list: List[DigitalPort]):
+        """
+        Sets up the digital port pins as inputs or outputs (switches).
+
+        :param digital_port_list: A list of ``DigitalPort``s.
+        :return: None
+        """
         value = 0x00
         for port in digital_port_list:
             if port.output:
@@ -397,6 +409,24 @@ class Di2008:
             self._dio[port.channel] = port
 
         self._command_queue.append(f'endo {value}')
+
+    def write_switch(self, digital_port_list: List[DigitalPort]):
+        """
+        Writes to any of the digital pins in the switch state.
+
+        :param digital_port_list: A list of ``DigitalPort``s
+        :return: None
+        """
+        value = 0x00
+        for port in digital_port_list:
+            if port.output:
+                value |= 1 << port.channel
+
+            # replace any default references with the
+            # user's references to the same channel
+            self._dio[port.channel] = port
+
+        self._command_queue.append(f'dout {value}')
 
     def create_scan_list(self, scan_list: List[Port]):
         """
