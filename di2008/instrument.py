@@ -39,7 +39,11 @@ class DigitalDirection(Enum):
     """
     Used to set the direction
     """
+
+    """Indicates that the port direction is to be an input"""
     INPUT = 0
+
+    """Indicates that the port direction is to be an output"""
     OUTPUT = 1
 
 
