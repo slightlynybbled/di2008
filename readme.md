@@ -26,8 +26,8 @@ Items marked out have already been completed.  The list is in approximate order 
  * ~~Read Rate Input~~ complete
  * Read Event Input
  * Read Counter Input
- * ~~Read Digital Input(s)~~
- * ~~Write to Digital Outputs~~
+ * ~~Read Digital Input(s)~~ complete
+ * ~~Write to Digital Outputs~~ complete
  * Better sample hardware timing control
  * Hardware Synchronization
 

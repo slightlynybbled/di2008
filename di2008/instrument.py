@@ -3,6 +3,7 @@ Implements some of the functionality of the DATAQ DI-2008 data acquisition modul
 """
 
 from datetime import datetime, timedelta
+from enum import Enum
 import logging
 import threading
 from time import sleep
@@ -24,6 +25,22 @@ class DigitalPortError(Exception):
     Raised when there is a digital port related error on the DI-2008
     """
     pass
+
+
+class PortNotValidError(Exception):
+    """
+    Raised when there is a port access attempted where a physical port does \
+    not exist.
+    """
+    pass
+
+
+class DigitalDirection(Enum):
+    """
+    Used to set the direction
+    """
+    INPUT = 0
+    OUTPUT = 1
 
 
 class Port:
@@ -62,7 +79,8 @@ class AnalogPort(Port):
     Analog input port which may be configured as a strict voltage monitor or \
     as a thermocouple input.
 
-    :param channel: integer, the channel number
+    :param channel: integer, the channel number as seen on the front of \
+    the devices, which is to say, the first channel is ``1`` instead of ``0``
     :param analog_range: float, the expected range when configurated as an \
     analog input; valid values are in [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, \
     1.0, 2.5, 5.0, 10.0, 25.0, 50.0] while invalid values will raise a \
@@ -306,7 +324,18 @@ class CountPort(Port):
 
 
 class DigitalPort(Port):
-    def __init__(self, channel: int, output: bool = False, loglevel=logging.INFO):
+    """
+    A digital input/output port.
+
+    :param channel: an integer corresponding to the digital channels as seen \
+    on the front face of the device (zero-indexed)
+    :param output: a boolean value, ``True`` if the channel is to be an output \
+    else false.
+    :param loglevel: the logging level to apply to the digital port.
+    """
+    def __init__(self, channel: int,
+                 output: DigitalDirection = DigitalDirection.INPUT,
+                 loglevel=logging.INFO):
         super().__init__(loglevel=loglevel)
 
         if channel not in range(0, 7):
@@ -318,14 +347,10 @@ class DigitalPort(Port):
         self.value = False
 
     def __repr__(self):
-        return f'digital {"output" if self.output else "input"} ' \
+        direction = 'output' \
+            if self.output == DigitalDirection.OUTPUT else 'input'
+        return f'digital {direction} ' \
             f'{self.channel}'
-
-    def pull_down(self):
-        self.output = True
-
-    def release(self):
-        self.output = False
 
 
 class Di2008:
@@ -392,41 +417,77 @@ class Di2008:
 
         self._command_queue.append(f'led {colors_lookup[color.lower()]}')
 
-    def setup_digital(self, digital_port_list: List[DigitalPort]):
+    def setup_dio_direction(self, channel: int, direction: DigitalDirection):
         """
-        Sets up the digital port pins as inputs or outputs (switches).
+        Setup the digital port direction for a single port.
 
-        :param digital_port_list: A list of ``DigitalPort``s.
+        :param channel: the channel number
+        :param direction: the ``DigitalDirection``
         :return: None
         """
-        value = 0x00
-        for port in digital_port_list:
-            if port.output:
-                value |= 1 << port.channel
+        if channel not in range(0, 7):
+            raise PortNotValidError('the specified port/channel '
+                                    f'"{channel}" does not exist')
 
-            # replace any default references with the
-            # user's references to the same channel
-            self._dio[port.channel] = port
+        self._logger.info(f'setting digital channel {channel} to {direction}')
 
-        self._command_queue.append(f'endo {value}')
+        directions = 0x00
 
-    def write_switch(self, digital_port_list: List[DigitalPort]):
+        # load the directions from the current dio
+        for i, port in enumerate(self._dio):
+            value = 1 if port.output == DigitalDirection.OUTPUT else 0
+            directions |= value << i
+
+        # modify the direction for the appropriate channel
+        if direction == DigitalDirection.OUTPUT:
+            directions |= 1 << channel
+        else:
+            directions &= ~(1 << channel)
+
+        self._dio[channel].output = direction
+
+        self._command_queue.append(f'endo {directions}')
+
+    def write_do(self, channel: int, state: bool):
         """
         Writes to any of the digital pins in the switch state.
 
-        :param digital_port_list: A list of ``DigitalPort``s
+        :param channel: an integer indicating the digital output
+        :param state: the value, ``True`` or ``False``; ``True`` releases the \
+        internal switch, meaning that the output will float up to 5V while \
+        ``False`` will activate the internal switch, pulling the node to 0V
         :return: None
         """
-        value = 0x00
-        for port in digital_port_list:
-            if port.output:
-                value |= 1 << port.channel
+        if channel not in range(0, 7):
+            raise PortNotValidError('the specified port/channel '
+                                    f'"{channel}" does not exist')
 
-            # replace any default references with the
-            # user's references to the same channel
-            self._dio[port.channel] = port
+        self._logger.info(f'setting digital channel {channel} to {state}')
 
-        self._command_queue.append(f'dout {value}')
+        values = 0x00
+        for i, dio in enumerate(self._dio):
+            if channel == i:
+                state_value = 0 if state else 1
+                values |= state_value << i
+                dio.value = state
+            else:
+                state_value = 1 if dio.value else 0
+                values |= state_value << i
+
+        self._command_queue.append(f'dout {values}')
+
+    def read_di(self, channel: int):
+        """
+        Reads the state of any digital input/output
+
+        :param channel: the channel number as shown on the instrument
+        :return: True if the channel is high, else False
+        """
+        if channel not in range(0, 7):
+            raise PortNotValidError('the specified port/channel '
+                                    f'"{channel}" does not exist')
+
+        return self._dio[channel].value
 
     def create_scan_list(self, scan_list: List[Port]):
         """
@@ -646,25 +707,17 @@ class Di2008:
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
 
-    daq = Di2008(loglevel=logging.DEBUG)
+    daq = Di2008(loglevel=logging.INFO)
     sleep(0.5)
-    daq.setup_digital(
-        [
-            DigitalPort(0, output=False)
-        ]
-    )
+    daq.setup_dio_direction(0, DigitalDirection.OUTPUT)
+    sleep(0.05)
+    daq.setup_dio_direction(0, DigitalDirection.OUTPUT)
 
-    # daq.create_scan_list(
-    #     [
-    #         AnalogPort(0, analog_range=10.0, filter='average'),
-    #         AnalogPort(1, thermocouple_type='j'),
-    #         AnalogPort(2, thermocouple_type='j'),
-    #         RatePort(5000)
-    #     ]
-    # )
-    #daq.start()
+    daq.write_do(0, True)
+    sleep(2)
+    print(daq.read_di(0))
+    daq.write_do(0, False)
+    sleep(2)
+    print(daq.read_di(0))
 
-    sleep(2.5)
-    daq.stop()
-    sleep(0.5)
     daq.close()
