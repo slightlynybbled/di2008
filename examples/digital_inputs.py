@@ -1,22 +1,20 @@
 import logging
 from time import sleep
 
-from di2008 import Di2008, DigitalPort
+from di2008 import Di2008, DigitalDirection
 
 logging.basicConfig(level=logging.DEBUG)
 
 daq = Di2008(port_name='COM110', loglevel=logging.INFO)
 
-d0 = DigitalPort(0, output=False)
-d1 = DigitalPort(1, output=False)
-d2 = DigitalPort(2, output=False)
-
-daq.setup_digital([d0, d1, d2])
+daq.setup_dio_direction(0, DigitalDirection.INPUT)
+daq.setup_dio_direction(1, DigitalDirection.INPUT)
+daq.setup_dio_direction(2, DigitalDirection.INPUT)
 
 while True:
-    print(f'D0: {d0.value}')
-    print(f'D1: {d1.value}')
-    print(f'D2: {d2.value}')
+    print(f'D0: {daq.read_di(0)}')
+    print(f'D1: {daq.read_di(1)}')
+    print(f'D2: {daq.read_di(2)}')
     print()
 
     sleep(1.0)
