@@ -56,23 +56,45 @@ Writing to Digital Outputs
 
 Writing to digital outputs is a two-stage process:
 
- 1. Define the digital outputs as instances of ``DigitalPort``
- 2. Setup the digital ports on the ``Di2008`` object
- 3. Write the desired states to the digital ports
+ 1. Setup the digital direction
+ 2. Write to the output using the ``Di2008`` object
 
 Sample code ::
 
     from time import sleep
-    from di2008 import AnalogPort, RatePort, Di2008
 
-    # create each of the inputs that need to be sampled
-    d0 = DigitalPort(0, output=True)
-    d2 = DigitalPort(2, output=True)
+    from di2008 import Di2008, DigitalDirection
 
     daq = Di2008()
-    daq.setup_digital(
-        [d0, d2]
-    )
+
+    daq.setup_dio_direction(0, DigitalDirection.OUTPUT)
 
     while True:
-        daq.write_switch()
+        daq.write_do(0, True)
+        sleep(1.0)
+
+        daq.write_do(0, False)
+        sleep(1.0)
+
+Reading to Digital Outputs
+--------------------------
+
+Writing to digital outputs is a two-stage process:
+
+ 1. Setup the digital direction
+ 2. Read the input using the ``Di2008`` object
+
+Sample code ::
+
+    from time import sleep
+
+    from di2008 import Di2008, DigitalDirection
+
+    daq = Di2008()
+
+    daq.setup_dio_direction(0, DigitalDirection.INPUT)
+
+    while True:
+        print(f'D0: {daq.read_di(0)}')
+
+        sleep(1.0)
