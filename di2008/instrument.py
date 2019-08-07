@@ -471,13 +471,14 @@ class Di2008:
 
         values = 0x00
         for i, dio in enumerate(self._dio):
-            if channel == i:
-                state_value = 0 if state else 1
-                values |= state_value << i
-                dio.value = state
-            else:
-                state_value = 1 if dio.value else 0
-                values |= state_value << i
+            if dio.direction == DigitalDirection.OUTPUT:
+                if channel == i:
+                    state_value = 0 if state else 1
+                    values |= state_value << i
+                    dio.value = state
+                else:
+                    state_value = 0 if dio.value else 1
+                    values |= state_value << i
 
         self._command_queue.append(f'dout {values}')
 
@@ -692,10 +693,27 @@ class Di2008:
             elif 'stop' in command:
                 self._scanning = False
 
-            self._send_cmd(command)
+            # collect the dout commands and only send the most recent
+            if 'dout' in command:
+                dout_indexes = []
+                for i, cmd in enumerate(self._command_queue):
+                    if 'dout' in cmd:
+                        dout_indexes.append(i)
+
+                if len(dout_indexes) == 0:
+                    self._send_cmd(command)
+                    return
+
+                command = self._command_queue[dout_indexes[-1]]
+                self._command_queue = [c for c in self._command_queue
+                                       if 'dout' not in c]
+                self._send_cmd(command)
+
+            else:
+                self._send_cmd(command)
 
         else:
-            # when there is nothing else to do, simply poll the digital inputs
+            # when there is nothing else to do, poll the digital inputs...
             self._command_queue.append('din')
 
     def _run(self):
