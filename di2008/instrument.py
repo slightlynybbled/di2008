@@ -339,7 +339,7 @@ class DigitalPort(Port):
     :param loglevel: the logging level to apply to the digital port.
     """
     def __init__(self, channel: int,
-                 output: DigitalDirection = DigitalDirection.INPUT,
+                 direction: DigitalDirection = DigitalDirection.INPUT,
                  loglevel=logging.INFO):
         super().__init__(loglevel=loglevel)
 
@@ -348,12 +348,12 @@ class DigitalPort(Port):
                                    'is not a valid digital channel')
 
         self.channel = channel
-        self.output = output
+        self.direction = direction
         self.value = False
 
     def __repr__(self):
         direction = 'output' \
-            if self.output == DigitalDirection.OUTPUT else 'input'
+            if self.direction == DigitalDirection.OUTPUT else 'input'
         return f'digital {direction} ' \
             f'{self.channel}'
 
@@ -440,7 +440,7 @@ class Di2008:
 
         # load the directions from the current dio
         for i, port in enumerate(self._dio):
-            value = 1 if port.output == DigitalDirection.OUTPUT else 0
+            value = 1 if port.direction == DigitalDirection.OUTPUT else 0
             directions |= value << i
 
         # modify the direction for the appropriate channel
@@ -449,7 +449,7 @@ class Di2008:
         else:
             directions &= ~(1 << channel)
 
-        self._dio[channel].output = direction
+        self._dio[channel].direction = direction
 
         self._command_queue.append(f'endo {directions}')
 
@@ -674,10 +674,11 @@ class Di2008:
         number = int(message.split(' ')[-1].strip())
 
         for i, port in enumerate(self._dio):
-            if (number & (1 << i)) > 0:
-                port.value = True
-            else:
-                port.value = False
+            if port.direction == DigitalDirection.INPUT:
+                if (number & (1 << i)) > 0:
+                    port.value = True
+                else:
+                    port.value = False
 
             self._logger.debug(f'digital {port} is {port.value}')
 
