@@ -5,7 +5,7 @@ from di2008 import Di2008, DigitalDirection
 
 logging.basicConfig(level=logging.DEBUG)
 
-daq = Di2008(port_name='COM110', loglevel=logging.INFO)
+daq = Di2008()
 
 daq.setup_dio_direction(0, DigitalDirection.INPUT)
 daq.setup_dio_direction(1, DigitalDirection.INPUT)

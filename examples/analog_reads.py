@@ -5,7 +5,7 @@ from di2008 import Di2008, AnalogPort, RatePort
 
 logging.basicConfig(level=logging.DEBUG)
 
-daq = Di2008(port_name='COM110', loglevel=logging.INFO)
+daq = Di2008()
 
 an1 = AnalogPort(1, analog_range=10.0, filter='average')
 an2 = AnalogPort(2, thermocouple_type='j')
