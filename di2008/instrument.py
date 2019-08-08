@@ -388,7 +388,7 @@ class Di2008:
 
         # initialize the command queue with basic information requests
         self._command_queue = [
-            'stop', 'info 0', 'info 1', 'info 2', 'info 6', 'srate 10'
+            'stop', 'info 0', 'info 1', 'info 2', 'info 6', 'srate 4'
         ]
 
         success = self._discover(port_name)
