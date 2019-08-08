@@ -11,6 +11,7 @@ from typing import List
 
 from serial import Serial
 from serial.tools import list_ports
+from serial.serialutil import SerialException
 
 
 class AnalogPortError(Exception):
@@ -718,7 +719,11 @@ class Di2008:
 
     def _run(self):
         while self._serial_port:
-            waiting = self._serial_port.in_waiting
+            try:
+                waiting = self._serial_port.in_waiting
+            except SerialException as e:
+                break
+
             if waiting > 0:
                 raw = self._serial_port.read(waiting)
                 self._parse_received(raw)
