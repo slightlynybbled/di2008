@@ -16,7 +16,7 @@ Once drivers are installed:
 
 # Project Status and Future
 
-The objects provided are tested and demonstrated to function well, however, there are still lots of features that have not been implemented.
+The objects provided are tested and demonstrated to function well, however, there are still some features that have not been implemented.
 
 Items marked out have already been completed.  The list is in approximate order of priority and marked out items have been completed.
 
