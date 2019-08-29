@@ -436,10 +436,17 @@ class DigitalPort(Port):
 class Di2008:
     """
     The device controller which implements its own ``threading.Thread`` class \
-    and processes incomming data based on its defined scan list.
+    and processes incomming data based on its defined scan list.  The
+    ``port_name`` and ``serial_number`` allow the user to specify a
+    particular device on the bus when there may be more than one device
+    present on the bus.  If both ``port_name`` and ``serial_number`` are
+    specified, then ``serial_number`` will take precedence.  If neither
+    are specified, then the first instrument found on the bus will be
+    automatically acquired.
 
     :param port_name: the COM port (if not specified, the software will \
     attempt to find the device)
+    :param serial_number: the serial number of the device to acquire
     :param timeout: the period of time over which input data is pulled from \
     the serial port and processed
     :param loglevel: the logging level, i.e. ``logging.INFO``
