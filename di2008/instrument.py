@@ -17,7 +17,24 @@ from serial.serialutil import SerialException
 _logger = logging.getLogger(__name__)
 
 
-def _discover_dataq_by_esn(serial_number: str):
+def _discover_auto():
+    buffering_time = 0.1
+    candidate_ports = []
+
+    available_ports = list(list_ports.comports())
+    for p in available_ports:
+        # Do we have a DATAQ Instruments device?
+        if "VID:PID=0683" in p.hwid:
+            candidate_ports.append(p.device)
+    _logger.debug(f'DI-2008 instruments detected on: {", ".join(candidate_ports)}')
+
+    try:
+        return candidate_ports[0]
+    except IndexError:
+        return None
+
+
+def _discover_by_esn(serial_number: str):
     buffering_time = 0.1
     correct_port = None
 
@@ -427,7 +444,7 @@ class Di2008:
     the serial port and processed
     :param loglevel: the logging level, i.e. ``logging.INFO``
     """
-    def __init__(self, port_name=None, timeout=0.05, loglevel=logging.INFO):
+    def __init__(self, port_name: str = None, serial_number: str = None, timeout=0.05, loglevel=logging.INFO):
         self._logger = logging.getLogger(self.__class__.__name__)
         self._logger.setLevel(loglevel)
 
@@ -449,7 +466,7 @@ class Di2008:
             'stop', 'info 0', 'info 1', 'info 2', 'info 6', 'srate 4'
         ]
 
-        success = self._discover(port_name)
+        success = self._discover(port_name, serial_number)
 
         if success:
             self._thread = threading.Thread(target=self._run)
@@ -634,26 +651,14 @@ class Di2008:
         self.start()
 
     def _discover(self, port_name: str = None, serial_number: str = None):
-        if port_name is None:
-            self._logger.info('port name not supplied, '
-                              'attempting auto-discovery...')
-            available_ports = list(list_ports.comports())
-            for p in available_ports:
-                # Do we have a DATAQ Instruments device?
-                if "VID:PID=0683" in p.hwid:
-                    # Yes!  Detect and assign the hooked com port
-                    port_name = p.device
-                    self._logger.info(f'auto discovery found DI-2008 on port '
-                                      f'{port_name.upper()}')
-                    break
+        if serial_number is not None:
+            port_name = _discover_by_esn(serial_number)
+        elif port_name is None:
+            port_name = _discover_auto()
 
         if port_name:
             self._logger.info(f'device found on {port_name}')
-            self._serial_port = Serial()
-            self._serial_port.timeout = 0
-            self._serial_port.port = port_name
-            self._serial_port.baudrate = '115200'
-            self._serial_port.open()
+            self._serial_port = Serial(port_name, baudrate=115200, timeout=0)
 
             return True
 
@@ -793,4 +798,6 @@ class Di2008:
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
 
-    print(_discover_dataq_by_esn('5C76AEFA'))
+    print(_discover_by_esn('5C76AEFA'))
+    print(_discover_by_esn('5D3F3a15'))
+    print(_discover_auto())
