@@ -14,6 +14,63 @@ from serial.tools import list_ports
 from serial.serialutil import SerialException
 
 
+_logger = logging.getLogger(__name__)
+
+
+def _discover_dataq_by_esn(serial_number: str):
+    buffering_time = 0.1
+    correct_port = None
+
+    candidate_ports = []
+    available_ports = list(list_ports.comports())
+    for p in available_ports:
+        # Do we have a DATAQ Instruments device?
+        if "VID:PID=0683" in p.hwid:
+            candidate_ports.append(p.device)
+    _logger.debug(f'DI-2008 instruments detected on: {", ".join(candidate_ports)}')
+
+    for port_name in candidate_ports:
+        _logger.info(f'checking candidate port {port_name}...')
+        if correct_port is not None:
+            break
+
+        try:
+            port = Serial(port_name, baudrate=115200)
+        except SerialException:
+            _logger.warning(f'candidate port {port_name} not accessible')
+            port = None
+
+        if port is not None:
+            port.flush()
+            port.write(f'stop\r\n'.encode())
+            sleep(buffering_time)
+            _logger.debug(f'stop command response: {port.read(port.in_waiting)}')
+
+            port.write(f'info 6\r\n'.encode())
+            sleep(buffering_time)
+            data = port.read(port.in_waiting)
+            _logger.debug(f'data from {port_name}: {data}')
+
+            characters = [chr(b) for b in data if b != 0]
+            message = ''.join(characters).strip()
+            _logger.debug(f'message from {port_name}: {message}')
+
+            parts = message.strip().split(' ')
+            if len(parts) == 3:
+                esn = parts[2]
+                if esn == serial_number.upper():
+                    correct_port = port_name
+
+            port.close()
+
+    if correct_port is None:
+        _logger.warning(f'DI-2008 serial number {serial_number} not found')
+    else:
+        _logger.info(f'DI-2008 serial number {serial_number} found on {correct_port}')
+
+    return correct_port
+
+
 class AnalogPortError(Exception):
     """
     Raised when there is an analog-port related error on the DI-2008
@@ -576,7 +633,7 @@ class Di2008:
         self.create_scan_list(self._ports)
         self.start()
 
-    def _discover(self, port_name=None):
+    def _discover(self, port_name: str = None, serial_number: str = None):
         if port_name is None:
             self._logger.info('port name not supplied, '
                               'attempting auto-discovery...')
@@ -736,17 +793,4 @@ class Di2008:
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
 
-    daq = Di2008(loglevel=logging.INFO)
-    sleep(0.5)
-    daq.setup_dio_direction(0, DigitalDirection.OUTPUT)
-    sleep(0.05)
-    daq.setup_dio_direction(0, DigitalDirection.OUTPUT)
-
-    daq.write_do(0, True)
-    sleep(2)
-    print(daq.read_di(0))
-    daq.write_do(0, False)
-    sleep(2)
-    print(daq.read_di(0))
-
-    daq.close()
+    print(_discover_dataq_by_esn('5C76AEFA'))
