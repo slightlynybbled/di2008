@@ -57,10 +57,16 @@ def _discover_by_esn(serial_number: str):
             port = None
 
         if port is not None:
-            port.flush()
-            port.write(f'stop\r\n'.encode())
-            sleep(buffering_time)
-            _logger.debug(f'stop command response: {port.read(port.in_waiting)}')
+            message = ''
+
+            while 'stop' not in message:
+                port.flush()
+                port.write(f'stop\r\n'.encode())
+                sleep(buffering_time)
+                data = port.read(port.in_waiting)
+                characters = [chr(b) for b in data if b != 0]
+                message = ''.join(characters).strip()
+                _logger.debug(f'stop command response: {message}')
 
             port.write(f'info 6\r\n'.encode())
             sleep(buffering_time)
