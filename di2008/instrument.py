@@ -18,7 +18,6 @@ _logger = logging.getLogger(__name__)
 
 
 def _discover_auto():
-    buffering_time = 0.1
     candidate_ports = []
 
     available_ports = list(list_ports.comports())
@@ -35,7 +34,7 @@ def _discover_auto():
 
 
 def _discover_by_esn(serial_number: str):
-    buffering_time = 0.1
+    buffering_time = 0.2
     correct_port = None
 
     candidate_ports = []
