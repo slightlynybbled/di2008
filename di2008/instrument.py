@@ -239,7 +239,8 @@ class AnalogPort(Port):
         filter_value = filter_types.index(filter.lower())
 
         self.configuration = configuration
-        self.commands += [f'filter {channel} {filter_value}',
+
+        self.commands += [f'filter {channel-1} {filter_value}',
                           f'dec {filter_decimation}']
 
     @property
