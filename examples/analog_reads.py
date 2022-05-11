@@ -2,7 +2,7 @@ import coloredlogs
 import logging
 from time import sleep
 
-from di2008.instrument_usb import Di2008, AnalogPort, RatePort
+from di2008 import Di2008, AnalogPort, RatePort
 
 loglevel = logging.INFO
 coloredlogs.install(level=loglevel)
