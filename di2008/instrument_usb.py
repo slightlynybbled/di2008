@@ -696,7 +696,10 @@ class Di2008:
 
     def _send_cmd(self, command: str):
         self._logger.debug(f'sending "{command}"')
-        self._device.write(ENDPOINT_BULK_OUT, f'{command}\r\n'.encode())
+        try:
+            self._device.write(ENDPOINT_BULK_OUT, f'{command}\r\n'.encode())
+        except KeyError as e:
+            self._logger.error(f'unknown exception during USB write event: {e}')
 
     def _parse_received(self, received):
         if self._scanning:
@@ -788,7 +791,7 @@ class Di2008:
     def _maintain_send_queue(self):
         if len(self._command_queue) > 0:
             command = self._command_queue.pop(0)
-            _logger.debug(f'processing command queue, next command: "{command}"')
+            self._logger.debug(f'processing command queue, next command: "{command}"')
 
             if 'start' in command:
                 self._scanning = True
