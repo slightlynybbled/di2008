@@ -1,31 +1,47 @@
+import coloredlogs
 import logging
 from time import sleep
 
-from di2008 import Di2008, AnalogPort, RatePort
+from di2008.instrument_usb import Di2008, AnalogPort, RatePort
 
-logging.basicConfig(level=logging.DEBUG)
+loglevel = logging.INFO
+coloredlogs.install(level=loglevel)
 
-daq = Di2008()
+daq = Di2008(loglevel=loglevel)
 
-an1 = AnalogPort(1, analog_range=10.0, filter='average')
-an2 = AnalogPort(2, thermocouple_type='j')
-an3 = AnalogPort(3, thermocouple_type='j')
-rate = RatePort(5000)
+channels = [
+    AnalogPort(1, analog_range=10.0, filter='average', loglevel=loglevel),
+    AnalogPort(2, analog_range=10.0, loglevel=loglevel),
+    AnalogPort(3, analog_range=10.0, loglevel=loglevel),
+    AnalogPort(4, analog_range=10.0, loglevel=loglevel),
+    AnalogPort(5, analog_range=10.0, loglevel=loglevel),
+    AnalogPort(6, analog_range=10.0, loglevel=loglevel),
+    AnalogPort(7, analog_range=10.0, loglevel=loglevel),
+    AnalogPort(8, analog_range=10.0, loglevel=loglevel),
+    RatePort(5000)
+]
 
-daq.create_scan_list(
-    [an1, an2, an3, rate]
-)
+daq.create_scan_list(channels)
 daq.start()
 
-# wait for values to to start coming in
-while not all([an1.value, an2.value, an3.value]):
+
+# wait for values to start coming in...
+while not all([1 if ch.value is not None else 0
+               for ch in channels]):
     sleep(0.1)
 
-while True:
-    print(f'CH1 analog value: {an1.value:.02f}')
-    print(f'CH2 temperature: {an2.value:.02f}')
-    print(f'CH3 temperature: {an3.value:.02f}')
-    print(f'Rate counter: {rate.value:.02f}')
-    print()
+print('initialized.....')
+count = 0
+while count < 20:
+    print([f'{ch.value:.5g}' for ch in channels])
 
-    sleep(1.0)
+    sleep(1)
+    count += 1
+
+daq.stop()
+count = 0
+max_count = 2
+while count < max_count:
+    print('count:', max_count-count)
+    sleep(0.2)
+    count += 1

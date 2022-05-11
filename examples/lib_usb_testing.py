@@ -25,11 +25,13 @@ def write(command: str):
     sleep(0.05)
     return response.strip()
 
-
-while True:
+count = 0
+max_count = 2
+while count < max_count:
     for i in range(7):
         response = write(f'info {i}')
-        print(response)
+        print('response:', response)
         print([c for c in response])
-        sleep(1)
+    sleep(1)
+    count += 1
 
