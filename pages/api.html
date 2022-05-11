@@ -1,0 +1,363 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>API &#8212; di2008  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Usage" href="usage.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="api">
+<h1>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
+<section id="exceptions">
+<h2>Exceptions<a class="headerlink" href="#exceptions" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="di2008.AnalogPortError">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">di2008.</span></span><span class="sig-name descname"><span class="pre">AnalogPortError</span></span><a class="headerlink" href="#di2008.AnalogPortError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised when there is an analog-port related error on the DI-2008</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py class">
+<dt class="sig sig-object py" id="di2008.DigitalPortError">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">di2008.</span></span><span class="sig-name descname"><span class="pre">DigitalPortError</span></span><a class="headerlink" href="#di2008.DigitalPortError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised when there is a digital port related error on the DI-2008</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py class">
+<dt class="sig sig-object py" id="di2008.PortNotValidError">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">di2008.</span></span><span class="sig-name descname"><span class="pre">PortNotValidError</span></span><a class="headerlink" href="#di2008.PortNotValidError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised when there is a port access attempted where a physical port does     not exist.</p>
+</dd></dl>
+
+</section>
+<section id="device">
+<h2>Device<a class="headerlink" href="#device" title="Permalink to this headline">¶</a></h2>
+<p>The device is where all of the ports actually reside within.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="di2008.Di2008">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">di2008.</span></span><span class="sig-name descname"><span class="pre">Di2008</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">serial_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loglevel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#di2008.Di2008" title="Permalink to this definition">¶</a></dt>
+<dd><p>The device controller which implements its own <code class="docutils literal notranslate"><span class="pre">threading.Thread</span></code> class     and processes incomming data based on its defined scan list.  The
+<code class="docutils literal notranslate"><span class="pre">port_name</span></code> and <code class="docutils literal notranslate"><span class="pre">serial_number</span></code> allow the user to specify a
+particular device on the bus when there may be more than one device
+present on the bus.  If both <code class="docutils literal notranslate"><span class="pre">port_name</span></code> and <code class="docutils literal notranslate"><span class="pre">serial_number</span></code> are
+specified, then <code class="docutils literal notranslate"><span class="pre">serial_number</span></code> will take precedence.  If neither
+are specified, then the first instrument found on the bus will be
+automatically acquired.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>port_name</strong> – the COM port (if not specified, the software will     attempt to find the device)</p></li>
+<li><p><strong>serial_number</strong> – the serial number of the device to acquire</p></li>
+<li><p><strong>timeout</strong> – the period of time over which input data is pulled from     the serial port and processed</p></li>
+<li><p><strong>loglevel</strong> – the logging level, i.e. <code class="docutils literal notranslate"><span class="pre">logging.INFO</span></code></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="di2008.Di2008.change_led_color">
+<span class="sig-name descname"><span class="pre">change_led_color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#di2008.Di2008.change_led_color" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change the LED color.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>color</strong> – the color as a string; valid values are in         [‘black’, ‘blue’, ‘green’, ‘cyan’, ‘red’, ‘magenta’, ‘yellow’,         ‘white’] and invalid values will raise a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="di2008.Di2008.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#di2008.Di2008.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Release the device and serial port.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="di2008.Di2008.create_scan_list">
+<span class="sig-name descname"><span class="pre">create_scan_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">di2008.instrument.Port</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#di2008.Di2008.create_scan_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds the scan list.  This must be done while the instrument is not         currently scanning or results are unpredictable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>scan_list</strong> – a list of <code class="docutils literal notranslate"><span class="pre">Port</span></code> types.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if success, else False</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="di2008.Di2008.read_di">
+<span class="sig-name descname"><span class="pre">read_di</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#di2008.Di2008.read_di" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the state of any digital input/output</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>channel</strong> – the channel number as shown on the instrument</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the channel is high, else False</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="di2008.Di2008.setup_dio_direction">
+<span class="sig-name descname"><span class="pre">setup_dio_direction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#di2008.DigitalDirection" title="di2008.instrument.DigitalDirection"><span class="pre">di2008.instrument.DigitalDirection</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#di2008.Di2008.setup_dio_direction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup the digital port direction for a single port.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>channel</strong> – the channel number</p></li>
+<li><p><strong>direction</strong> – the <code class="docutils literal notranslate"><span class="pre">DigitalDirection</span></code></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="di2008.Di2008.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#di2008.Di2008.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts the device scanning.  The scan list must already be defined         using <code class="docutils literal notranslate"><span class="pre">create_scan_list</span></code> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="di2008.Di2008.stop">
+<span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#di2008.Di2008.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stops the device scanning.
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="di2008.Di2008.write_do">
+<span class="sig-name descname"><span class="pre">write_do</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#di2008.Di2008.write_do" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes to any of the digital pins in the switch state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>channel</strong> – an integer indicating the digital output</p></li>
+<li><p><strong>state</strong> – the value, <code class="docutils literal notranslate"><span class="pre">True</span></code> or <code class="docutils literal notranslate"><span class="pre">False</span></code>; <code class="docutils literal notranslate"><span class="pre">True</span></code> releases the         internal switch, meaning that the output will float up to 5V while         <code class="docutils literal notranslate"><span class="pre">False</span></code> will activate the internal switch, pulling the node to 0V</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="ports">
+<h2>Ports<a class="headerlink" href="#ports" title="Permalink to this headline">¶</a></h2>
+<p>Input ports are generally added into the scan list which the device scans in a
+round-robin method.  All inputs are subclasses of the <code class="docutils literal notranslate"><span class="pre">Port</span></code> class.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="di2008.DigitalDirection">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">di2008.</span></span><span class="sig-name descname"><span class="pre">DigitalDirection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#di2008.DigitalDirection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to set the direction</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="di2008.DigitalDirection.INPUT">
+<span class="sig-name descname"><span class="pre">INPUT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#di2008.DigitalDirection.INPUT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates that the port direction is to be an input</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="di2008.DigitalDirection.OUTPUT">
+<span class="sig-name descname"><span class="pre">OUTPUT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#di2008.DigitalDirection.OUTPUT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates that the port direction is to be an output</p>
+</dd></dl>
+
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py class">
+<dt class="sig sig-object py" id="di2008.AnalogPort">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">di2008.</span></span><span class="sig-name descname"><span class="pre">AnalogPort</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel:</span> <span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analog_range:</span> <span class="pre">(&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'decimal.Decimal'&gt;)</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thermocouple_type:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'last</span> <span class="pre">point'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_decimation:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loglevel=20</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#di2008.AnalogPort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Analog input port which may be configured as a strict voltage monitor or     as a thermocouple input.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>channel</strong> – integer, the channel number as seen on the front of     the devices, which is to say, the first channel is <code class="docutils literal notranslate"><span class="pre">1</span></code> instead of <code class="docutils literal notranslate"><span class="pre">0</span></code></p></li>
+<li><p><strong>analog_range</strong> – <code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">Decimal</span></code>, the expected range when configurated as an     analog input; valid values are in [<cite>0.01</cite>, <cite>0.025</cite>, <cite>0.05</cite>, <cite>0.1</cite>, <cite>0.25</cite>, <cite>0.5</cite>,     <cite>1.0</cite>, <cite>2.5</cite>, <cite>5.0</cite>, <cite>10.0</cite>, <cite>25.0</cite>, <cite>50.0</cite>] while invalid values will raise a     <code class="docutils literal notranslate"><span class="pre">ValueError</span></code></p></li>
+<li><p><strong>thermocouple_type</strong> – string, a single letter denoting the     thermocouple type; valid values are in [‘b’, ‘e’, ‘j’, ‘k’, ‘n’, ‘r’,     ‘s’, ‘t’] and invalid values will raise a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code></p></li>
+<li><p><strong>filter</strong> – string, a string containing ‘last point’, ‘average’,     ‘maximum’ or ‘minimum’ as defined in the device datasheet</p></li>
+<li><p><strong>filter_decimation</strong> – int, an integer containing the number of     samples over which to filter as defined in the device datasheet</p></li>
+<li><p><strong>loglevel</strong> – the logging level, i.e. <code class="docutils literal notranslate"><span class="pre">logging.INFO</span></code></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="di2008.AnalogPort.parse">
+<span class="sig-name descname"><span class="pre">parse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#di2008.AnalogPort.parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">parse</span></code> method is intended to be called by the Di2008         class when it receives data associated with the <code class="docutils literal notranslate"><span class="pre">AnalogPort</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>value</strong> – 16-bit integer value representing the ‘raw’ data stream</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py class">
+<dt class="sig sig-object py" id="di2008.DigitalPort">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">di2008.</span></span><span class="sig-name descname"><span class="pre">DigitalPort</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#di2008.DigitalDirection" title="di2008.instrument.DigitalDirection"><span class="pre">di2008.instrument.DigitalDirection</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">DigitalDirection.INPUT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loglevel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#di2008.DigitalPort" title="Permalink to this definition">¶</a></dt>
+<dd><p>A digital input/output port.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>channel</strong> – an integer corresponding to the digital channels as seen     on the front face of the device (zero-indexed)</p></li>
+<li><p><strong>output</strong> – a boolean value, <code class="docutils literal notranslate"><span class="pre">True</span></code> if the channel is to be an output     else false.</p></li>
+<li><p><strong>loglevel</strong> – the logging level to apply to the digital port.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py class">
+<dt class="sig sig-object py" id="di2008.RatePort">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">di2008.</span></span><span class="sig-name descname"><span class="pre">RatePort</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">range_hz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loglevel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#di2008.RatePort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Digital input port which may be configured as a frequency monitor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>range_hz</strong> – the maximum range of the input, in Hz; valid values are     in [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10] and     invalid values will raise a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code></p></li>
+<li><p><strong>filter_samples</strong> – filter samples as defined within the device     datasheet</p></li>
+<li><p><strong>loglevel</strong> – the logging level, i.e. <code class="docutils literal notranslate"><span class="pre">logging.INFO</span></code></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py class">
+<dt class="sig sig-object py" id="di2008.CountPort">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">di2008.</span></span><span class="sig-name descname"><span class="pre">CountPort</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loglevel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#di2008.CountPort" title="Permalink to this definition">¶</a></dt>
+<dd><p>todo: Implement and document CountPort</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">di2008</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#exceptions">Exceptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#device">Device</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ports">Ports</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="usage.html" title="previous chapter">Usage</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Jason R. Jones.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/pages/api.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

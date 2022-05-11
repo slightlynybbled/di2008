@@ -1,0 +1,223 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Usage &#8212; di2008  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API" href="api.html" />
+    <link rel="prev" title="Installation" href="installation.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<section id="hardware-setup">
+<h2>Hardware Setup<a class="headerlink" href="#hardware-setup" title="Permalink to this headline">¶</a></h2>
+<p>Place device into ‘USB’ mode:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Disconnect from USB</p></li>
+<li><p>Wait 5 seconds</p></li>
+<li><p>Connect to USB and press button on side rapidly until LED changes</p></li>
+</ol>
+</div></blockquote>
+<p>The device setting is persistent and will not need to be changed again.
+If you see a COM port in your device manager with the label <cite>DATAQ DI-2008</cite>
+then the device is NOT in the correct mode!</p>
+</section>
+<section id="scanning-inputs">
+<h2>Scanning Inputs<a class="headerlink" href="#scanning-inputs" title="Permalink to this headline">¶</a></h2>
+<p>To read a few analog inputs, device setup is relatively simple.</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Define the ports</p></li>
+<li><p>Create the <cite>Di2008</cite> instance</p></li>
+<li><p>Add the scan list</p></li>
+<li><p>Start the scanning process</p></li>
+<li><p>Read inputs at whatever timing is desired as the inputs will be updated “live”</p></li>
+</ol>
+</div></blockquote>
+<p>Some sample code might be more illuminating.  A simple script to set up the scan list and to print the values every
+second:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span>
+<span class="kn">from</span> <span class="nn">di2008</span> <span class="kn">import</span> <span class="n">AnalogPort</span><span class="p">,</span> <span class="n">RatePort</span><span class="p">,</span> <span class="n">Di2008</span>
+
+<span class="c1"># create each of the inputs that need to be sampled</span>
+<span class="n">an0</span> <span class="o">=</span> <span class="n">AnalogPort</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">analog_range</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="s1">&#39;average&#39;</span><span class="p">)</span>
+<span class="n">an1</span> <span class="o">=</span> <span class="n">AnalogPort</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">thermocouple_type</span><span class="o">=</span><span class="s1">&#39;j&#39;</span><span class="p">)</span>
+<span class="n">an2</span> <span class="o">=</span> <span class="n">AnalogPort</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">thermocouple_type</span><span class="o">=</span><span class="s1">&#39;j&#39;</span><span class="p">)</span>
+<span class="n">rate</span> <span class="o">=</span> <span class="n">RatePort</span><span class="p">(</span><span class="mi">5000</span><span class="p">)</span>
+
+<span class="n">daq</span> <span class="o">=</span> <span class="n">Di2008</span><span class="p">()</span>
+<span class="n">daq</span><span class="o">.</span><span class="n">create_scan_list</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">an0</span><span class="p">,</span> <span class="n">an1</span><span class="p">,</span> <span class="n">an2</span><span class="p">,</span> <span class="n">rate</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="n">daq</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">an0</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.02f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">an1</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.02f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">an2</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.02f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">rate</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.02f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">()</span>
+
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="writing-to-digital-outputs">
+<h2>Writing to Digital Outputs<a class="headerlink" href="#writing-to-digital-outputs" title="Permalink to this headline">¶</a></h2>
+<p>Writing to digital outputs is a two-stage process:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Setup the digital direction</p></li>
+<li><p>Write to the output using the <code class="docutils literal notranslate"><span class="pre">Di2008</span></code> object</p></li>
+</ol>
+</div></blockquote>
+<p>Sample code</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span>
+
+<span class="kn">from</span> <span class="nn">di2008</span> <span class="kn">import</span> <span class="n">Di2008</span><span class="p">,</span> <span class="n">DigitalDirection</span>
+
+<span class="n">daq</span> <span class="o">=</span> <span class="n">Di2008</span><span class="p">()</span>
+
+<span class="n">daq</span><span class="o">.</span><span class="n">setup_dio_direction</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">DigitalDirection</span><span class="o">.</span><span class="n">OUTPUT</span><span class="p">)</span>
+
+<span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="n">daq</span><span class="o">.</span><span class="n">write_do</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="n">daq</span><span class="o">.</span><span class="n">write_do</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="reading-to-digital-outputs">
+<h2>Reading to Digital Outputs<a class="headerlink" href="#reading-to-digital-outputs" title="Permalink to this headline">¶</a></h2>
+<p>Writing to digital outputs is a two-stage process:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Setup the digital direction</p></li>
+<li><p>Read the input using the <code class="docutils literal notranslate"><span class="pre">Di2008</span></code> object</p></li>
+</ol>
+</div></blockquote>
+<p>Sample code</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span>
+
+<span class="kn">from</span> <span class="nn">di2008</span> <span class="kn">import</span> <span class="n">Di2008</span><span class="p">,</span> <span class="n">DigitalDirection</span>
+
+<span class="n">daq</span> <span class="o">=</span> <span class="n">Di2008</span><span class="p">()</span>
+
+<span class="n">daq</span><span class="o">.</span><span class="n">setup_dio_direction</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">DigitalDirection</span><span class="o">.</span><span class="n">INPUT</span><span class="p">)</span>
+
+<span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;D0: </span><span class="si">{</span><span class="n">daq</span><span class="o">.</span><span class="n">read_di</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">di2008</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#hardware-setup">Hardware Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#scanning-inputs">Scanning Inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#writing-to-digital-outputs">Writing to Digital Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reading-to-digital-outputs">Reading to Digital Outputs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="installation.html" title="previous chapter">Installation</a></li>
+      <li>Next: <a href="api.html" title="next chapter">API</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Jason R. Jones.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/pages/usage.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
