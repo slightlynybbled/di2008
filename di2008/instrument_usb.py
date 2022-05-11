@@ -9,88 +9,74 @@ import threading
 from time import sleep
 from typing import List
 
-from serial import Serial
-from serial.tools import list_ports
-from serial.serialutil import SerialException
+import usb.core
+import usb.util
 
 
 _logger = logging.getLogger(__name__)
 
+ENDPOINT_BULK_OUT = 0x1
+ENDPOINT_BULK_IN = 0x81
 
-def _discover_auto():
-    candidate_ports = []
 
-    available_ports = list(list_ports.comports())
-    for p in available_ports:
-        # Do we have a DATAQ Instruments device?
-        if "VID:PID=0683" in p.hwid:
-            candidate_ports.append(p.device)
-    _logger.debug(f'DI-2008 instruments detected on: {", ".join(candidate_ports)}')
+def _discover_auto() -> 'usb.core.Device':
+    available_devices = [d for d in usb.core.find(find_all=True, idVendor=0x0683, idProduct=0x2008)]
+    dev_strings = [str(d) for d in available_devices]
+    _logger.debug(f'DI-2008 instruments detected on: {", ".join(dev_strings)}')
 
     try:
-        return candidate_ports[0]
+        return available_devices[0]
     except IndexError:
-        return None
+        raise AttributeError('there are no devices on the network')
 
 
-def _discover_by_esn(serial_number: str):
-    buffering_time = 0.2
-    correct_port = None
+def _discover_by_esn(serial_number: str) -> 'usb.core.Device':
+    buffering_time = 0.05
+    correct_device = None
 
-    candidate_ports = []
-    available_ports = list(list_ports.comports())
-    for p in available_ports:
-        # Do we have a DATAQ Instruments device?
-        if "VID:PID=0683" in p.hwid:
-            candidate_ports.append(p.device)
-    _logger.debug(f'DI-2008 instruments detected on: {", ".join(candidate_ports)}')
+    available_devices = [d for d in usb.core.find(find_all=True,
+                                                  idVendor=0x0683,
+                                                  idProduct=0x2008)]
+    dev_strings = [str(d) for d in available_devices]
+    _logger.debug(f'DI-2008 instruments detected on: {", ".join(dev_strings)}')
 
-    for port_name in candidate_ports:
-        _logger.info(f'checking candidate port {port_name}...')
-        if correct_port is not None:
+    for device in available_devices:
+        _logger.info(f'checking candidate device "{device}"...')
+        if correct_device is not None:
             break
 
-        try:
-            port = Serial(port_name, baudrate=115200)
-        except SerialException:
-            _logger.warning(f'candidate port {port_name} not accessible')
-            port = None
-
-        if port is not None:
-            message = ''
-
-            while 'stop' not in message:
-                port.flush()
-                port.write(f'stop\r\n'.encode())
-                sleep(buffering_time)
-                data = port.read(port.in_waiting)
-                characters = [chr(b) for b in data if b != 0]
-                message = ''.join(characters).strip()
-                _logger.debug(f'stop command response: {message}')
-
-            port.write(f'info 6\r\n'.encode())
+        response = ''
+        while 'stop' not in response:
+            device.write(ENDPOINT_BULK_OUT, f'stop\r\n'.encode())
             sleep(buffering_time)
-            data = port.read(port.in_waiting)
-            _logger.debug(f'data from {port_name}: {data}')
+            response = device.read(ENDPOINT_BULK_IN, 128)
+            response = ''.join([chr(b) for b in response if b != 0])
+            response = response.strip()
+            _logger.debug(f'stop command response: "{response}"')
 
-            characters = [chr(b) for b in data if b != 0]
-            message = ''.join(characters).strip()
-            _logger.debug(f'message from {port_name}: {message}')
+        device.write(ENDPOINT_BULK_OUT, f'info 6\r\n'.encode('utf-8'))
+        sleep(buffering_time)
 
-            parts = message.strip().split(' ')
-            if len(parts) == 3:
-                esn = parts[2]
-                if esn == serial_number.upper():
-                    correct_port = port_name
+        response = device.read(0x81, 128)
+        response = ''.join([chr(b) for b in response if b != 0])
+        response = response.strip()
+        _logger.debug(f'message from {device}: "{response}"')
 
-            port.close()
+        parts = response.strip().split('\r\n')
+        if len(parts) == 2:
+            esn = parts[1].strip()
+            if esn == serial_number.upper():
+                correct_device = device
 
-    if correct_port is None:
-        _logger.warning(f'DI-2008 serial number {serial_number} not found')
+        if correct_device is not None:
+            break
+
+    if correct_device is None:
+        raise AttributeError(f'DI-2008 serial number "{serial_number}" not found')
     else:
-        _logger.info(f'DI-2008 serial number {serial_number} found on {correct_port}')
+        _logger.info(f'DI-2008 serial number "{serial_number}" found on "{correct_device}"')
 
-    return correct_port
+    return correct_device
 
 
 class AnalogPortError(Exception):
@@ -361,7 +347,7 @@ class RatePort(Port):
     datasheet
     :param loglevel: the logging level, i.e. ``logging.INFO``
     """
-    def __init__(self, range_hz=50000, filter_samples: int = 32,
+    def __init__(self, range_hz: int = 50000, filter_samples: int = 32,
                  loglevel=logging.INFO):
         super().__init__(loglevel=loglevel)
 
@@ -457,14 +443,14 @@ class Di2008:
     the serial port and processed
     :param loglevel: the logging level, i.e. ``logging.INFO``
     """
-    def __init__(self, port_name: str = None, serial_number: str = None, timeout=0.05, loglevel=logging.INFO):
+    def __init__(self, serial_number: str = None, timeout=0.05, loglevel=logging.INFO):
         self._logger = logging.getLogger(self.__class__.__name__)
         self._logger.setLevel(loglevel)
 
         self._timeout = timeout
         self._scanning = False
         self._scan_index = 0
-        self._serial_port = None
+        self._device = None
         self._ports = []
         self._dio = [DigitalPort(x) for x in range(0, 7)]
         self._raw = []
@@ -479,7 +465,7 @@ class Di2008:
             'stop', 'info 0', 'info 1', 'info 2', 'info 6', 'srate 4'
         ]
 
-        success = self._discover(port_name, serial_number)
+        success = self._discover(serial_number)
 
         if success:
             self._thread = threading.Thread(target=self._run, daemon=True)
@@ -653,9 +639,9 @@ class Di2008:
         :return: None
         """
         self._logger.warning('closing port')
-        if self._serial_port:
-            self._serial_port.close()
-            self._serial_port = None
+        if self._device:
+            self._device.close()
+            self._device = None
 
     def _recover_buffer_overflow(self):
         self._command_queue = []
@@ -663,27 +649,24 @@ class Di2008:
         self.create_scan_list(self._ports)
         self.start()
 
-    def _discover(self, port_name: str = None, serial_number: str = None):
+    def _discover(self, serial_number: str = None):
         if serial_number is not None:
-            port_name = _discover_by_esn(serial_number)
-        elif port_name is None:
-            port_name = _discover_auto()
+            self._device = _discover_by_esn(serial_number)
+        else:
+            self._device = _discover_auto()
 
-        if port_name:
-            self._logger.info(f'device found on {port_name}')
-            self._serial_port = Serial(port_name, baudrate=115200, timeout=0)
-            self._serial_port.reset_input_buffer()
-            self._serial_port.reset_output_buffer()
+        self._logger.info(f'device found on {self._device}')
 
+        if self._device is not None:
             return True
 
         raise ValueError('DI-2008 not found on bus')
 
     def _send_cmd(self, command: str):
         self._logger.debug(f'sending "{command}"')
-        self._serial_port.write(f'{command}\r'.encode())
+        self._device.write(ENDPOINT_BULK_OUT, f'{command}\r\n'.encode())
 
-    def _parse_received(self, received):
+    def _parse_received(self, received: str):
         self._logger.debug(f'received from unit: "{received}"')
 
         if self._scanning:
@@ -795,15 +778,13 @@ class Di2008:
             self._command_queue.append('din')
 
     def _run(self):
-        while self._serial_port:
+        while self._device:
             try:
-                waiting = self._serial_port.in_waiting
-            except SerialException as e:
-                break
-
-            if waiting > 0:
-                raw = self._serial_port.read(waiting)
-                self._parse_received(raw)
+                response = self._device.read(ENDPOINT_BULK_IN, 64)
+                response = ''.join([chr(b) for b in response if b != 0])
+                self._parse_received(response)
+            except usb.core.USBTimeoutError:
+                pass
 
             self._maintain_send_queue()
 
@@ -811,8 +792,8 @@ class Di2008:
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     print(_discover_by_esn('5C76AEFA'))
-    print(_discover_by_esn('5D3F3a15'))
     print(_discover_auto())
+    print(_discover_by_esn('5ec7b7d2'))
