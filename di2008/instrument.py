@@ -288,25 +288,25 @@ class AnalogPort(Port):
 
         return string
 
-    def parse(self, input):
+    def parse(self, value):
         """
         The ``parse`` method is intended to be called by the Di2008 \
         class when it receives data associated with the ``AnalogPort``.
 
-        :param input: 16-bit integer input representing the 'raw' data stream
+        :param value: 16-bit integer value representing the 'raw' data stream
         :return:
         """
         self._last_received = datetime.now()
 
         if self._is_tc:
-            if input == 32767:
+            if value == 32767:
                 self.value = None
                 self._logger.warning('!!! thermocouple error, cannot '
                                      'communicate with sensor or the reading '
                                      'is outside the sensor\'s measurement '
                                      f'range on "{str(self)}"')
                 return
-            elif input == -32768:
+            elif value == -32768:
                 self.value = None
                 self._logger.warning(f'!!! thermocouple error, thermocouple '
                                      f'open or not connected on "{str(self)}"')
@@ -331,8 +331,8 @@ class AnalogPort(Port):
             m = m_lookup[tc_type]
             b = b_lookup[tc_type]
 
-            self.value = input * m + b
-            self._logger.debug(f'input value "{input}" converted for '
+            self.value = value * m + b
+            self._logger.debug(f'value "{value}" converted for '
                                f'"{str(self)}" is "{self.value:.2f}°C"')
 
             if self._callback:
@@ -348,8 +348,8 @@ class AnalogPort(Port):
             >> self._scale_bit
         range_value = ranges[scale_factor]
 
-        self.value = range_value * float(input) / 32768.0
-        self._logger.debug(f'input value "{input}" converted for '
+        self.value = range_value * float(value) / 32768.0
+        self._logger.debug(f'value "{value}" converted for '
                            f'"{str(self)}" is "{self.value:.5g}V"')
 
         if self._callback:
@@ -393,11 +393,11 @@ class RatePort(Port):
     def __str__(self):
         return f'rate input, {self._range}Hz'
 
-    def parse(self, input):
+    def parse(self, value):
         self._last_received = datetime.now()
 
-        self.value = self._range * (input + 32768) / 65536
-        self._logger.debug(f'input value "{input}" converted for '
+        self.value = self._range * (value + 32768) / 65536
+        self._logger.debug(f'value "{value}" converted for '
                            f'"{str(self)}" is "{self.value:.4f}Hz"')
 
         if self._callback:

@@ -12,7 +12,7 @@ Documentation for ``di2008``
 
    pages/installation
    pages/usage
-   pages/classes
+   pages/api
 
 
 Indices and tables

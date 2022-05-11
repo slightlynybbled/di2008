@@ -4,14 +4,15 @@ Usage
 Hardware Setup
 ---------------
 
-Place device into 'COM' mode:
+Place device into 'USB' mode:
 
  1. Disconnect from USB
  2. Wait 5 seconds
  3. Connect to USB and press button on side rapidly until LED changes
 
-The device setting is persistent and will not need to be changed again.  In windows, you should see a COM port in your
-device manager with the label `DATAQ DI-2008` when the device is in the appropriate mode.
+The device setting is persistent and will not need to be changed again.
+If you see a COM port in your device manager with the label `DATAQ DI-2008`
+then the device is NOT in the correct mode!
 
 Scanning Inputs
 ---------------
