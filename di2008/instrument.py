@@ -497,6 +497,10 @@ class Di2008:
         return f'{self._manufacturer} DI-{self._pid}, serial number ' \
             f'{self._esn}, firmware {self._firmware}'
 
+    @property
+    def is_scanning(self):
+        return self._scanning
+
     def change_led_color(self, color: 'str'):
         """
         Change the LED color.
