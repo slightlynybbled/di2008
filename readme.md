@@ -15,7 +15,7 @@ better yet, send us a pull request!
 
 Check out the [documentation](https://slightlynybbled.github.io/di2008/)!
 
-# Installation
+## Installation
 
 The hardware drivers must be installed before this package may be utilized.  Hardware 
 drivers may be downloaded from the [manufacturer's product page](https://www.dataq.com/products/di-2008/).
@@ -24,7 +24,7 @@ Once drivers are installed:
 
     $> pip install di2008
 
-# Project Status and Future
+## Project Status and Future
 
 The objects provided are tested and demonstrated to function well, however, there are still some features that have not been implemented.
 
@@ -41,11 +41,19 @@ Items marked out have already been completed.  The list is in approximate order 
  * Better sample hardware timing control
  * Hardware Synchronization
 
-# Usage
+## Usage
 
 Regarding the specifics of usage, it may be very helpful for the user to read the device documentation so that some of the concepts enshrined herein are more precisely interpreted.  Specifically, the concept of a "scan list" is somewhat unique to the product and difficult to abstract.  As the project matures, more of the hardware idiosyncrasies are expected to be exposed to the user.
 
-## Hardware Setup
+## Deployment
+
+When deploying using `pyinstaller` in a windows environment, the `pyusb` library doesn't
+play well with `libusb-1.0.dll`, so you will need to package `libusb0.dll` into your
+pyinsteller `*.spec` file using the following line:
+
+    datas=[('C:\\Windows\\System32\\libusb0.dll', '.'),],
+
+### Hardware Setup
 
 Place device into 'USB' mode, not COM mode!!!
 
@@ -57,7 +65,7 @@ The device setting is persistent and will not need to be changed again.
 If you see a COM port in your device manager with the label `DATAQ DI-2008` 
 then the device is NOT in the correct mode!
 
-## Software Setup
+### Software Setup
 
 To read a few analog inputs, device setup is relatively simple.
 
@@ -92,7 +100,3 @@ Some sample code might be more illuminating.  A simple script to set up the scan
         print()
         
         sleep(1.0)
-        
-# Contributions
-
-Project could use some work, particularly in documentation.
