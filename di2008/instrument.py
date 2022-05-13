@@ -9,6 +9,7 @@ import threading
 from time import sleep
 from typing import List
 
+import usb.backend.libusb0 as libusb0
 import usb.core
 import usb.util
 
@@ -20,7 +21,10 @@ ENDPOINT_BULK_IN = 0x81
 
 
 def _discover_auto() -> 'usb.core.Device':
-    available_devices = [d for d in usb.core.find(find_all=True, idVendor=0x0683, idProduct=0x2008)]
+    available_devices = [d for d in usb.core.find(find_all=True,
+                                                  idVendor=0x0683,
+                                                  idProduct=0x2008,
+                                                  backend=libusb0.get_backend())]
     if len(available_devices) == 0:
         raise AttributeError('there are no DI-2008 devices attached to the PC that are in USB mode')
 
@@ -40,13 +44,15 @@ def _discover_auto() -> 'usb.core.Device':
 
     return device
 
+
 def _discover_by_esn(serial_number: str) -> 'usb.core.Device':
     buffering_time = 0.05
     correct_device = None
 
     available_devices = [d for d in usb.core.find(find_all=True,
                                                   idVendor=0x0683,
-                                                  idProduct=0x2008)]
+                                                  idProduct=0x2008,
+                                                  backend=libusb1.get_backend())]
     dev_strings = [str(d) for d in available_devices]
     _logger.debug(f'DI-2008 instruments detected on: {", ".join(dev_strings)}')
 
@@ -833,10 +839,10 @@ class Di2008:
                 try:
                     response = self._device.read(ENDPOINT_BULK_IN, 64, timeout=timeout_ms)
                     self._parse_received(response)
-                except usb.core.USBTimeoutError:
+                except (usb.core.USBTimeoutError, usb.core.USBError):
                     break
                 except Exception as e:
-                    print(f'unknown error: {e}')
+                    self._logger.warning(f'unknown error: {e}')
                     break
 
             self._maintain_send_queue()

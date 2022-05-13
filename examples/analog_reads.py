@@ -10,11 +10,11 @@ coloredlogs.install(level=loglevel)
 daq = Di2008(loglevel=loglevel)
 
 channels = [
-    RatePort(5000),
     AnalogPort(1, analog_range=10.0, filter='average', loglevel=loglevel),
     AnalogPort(2, analog_range=10.0, loglevel=loglevel),
     AnalogPort(3, analog_range=10.0, loglevel=loglevel),
     AnalogPort(8, analog_range=10.0, loglevel=loglevel),
+    RatePort(5000),
 ]
 
 daq.create_scan_list(channels)
