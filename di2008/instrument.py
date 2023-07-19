@@ -52,7 +52,7 @@ def _discover_by_esn(serial_number: str) -> 'usb.core.Device':
     available_devices = [d for d in usb.core.find(find_all=True,
                                                   idVendor=0x0683,
                                                   idProduct=0x2008,
-                                                  backend=libusb1.get_backend())]
+                                                  backend=libusb0.get_backend())]
     dev_strings = [str(d) for d in available_devices]
     _logger.debug(f'DI-2008 instruments detected on: {", ".join(dev_strings)}')
 
